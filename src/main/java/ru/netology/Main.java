@@ -3,11 +3,13 @@ package ru.netology;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
+import java.util.concurrent.*;
 
 public class Main {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+
+        Integer maxValue = 0;
 
         String[] texts = new String[25];
 
@@ -17,11 +19,12 @@ public class Main {
 
         long startTs = System.currentTimeMillis(); // start time
 
-        List<Thread> threads = new ArrayList<>();
+        List<Future> futureList = new ArrayList<>();
+        ExecutorService threadPool = Executors.newFixedThreadPool(texts.length);
 
         for (String text : texts) {
 
-            Runnable task = () -> {
+            Callable<Integer> task = () -> {
                 int maxSize = 0;
                 for (int i = 0; i < text.length(); i++) {
                     for (int j = 0; j < text.length(); j++) {
@@ -41,21 +44,23 @@ public class Main {
                     }
                 }
                 System.out.println(text.substring(0, 100) + " -> " + maxSize);
+                return maxSize;
             };
-
-            Thread thread = new Thread(task);
-            thread.start();
-
-            threads.add(thread);
+            futureList.add(threadPool.submit(task));
         }
 
-        for (Thread thread : threads) {
-            thread.join();
+
+        for (Future<Integer> future : futureList) {
+            maxValue = (maxValue < future.get()) ? future.get() : maxValue;
+
         }
 
         long endTs = System.currentTimeMillis(); // end time
 
         System.out.println("Time: " + (endTs - startTs) + "ms");
+        System.out.println("MaxValue of list: " + maxValue);
+
+        threadPool.shutdown();
     }
 
 
